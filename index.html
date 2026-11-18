@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Atom Atelier</title>
+<style>
+  :root { --ink:#243a3a; --paper:#f4f1e8; --line:#d9d5c8; --teal:#2f6562; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; overflow:hidden; font-family:"Trebuchet MS", system-ui, sans-serif; color:var(--ink); background:#e9e7de; }
+  button { font:inherit; color:inherit; }
+  #app { height:100dvh; display:grid; grid-template-columns:180px minmax(0,1fr); background:var(--paper); }
+  aside { border-right:1px solid var(--line); background:#efede4; display:flex; flex-direction:column; padding:22px 18px 18px; z-index:5; min-width:0; }
+  .brand { display:flex; align-items:center; gap:10px; margin-bottom:22px; }
+  .brandmark { width:34px; height:34px; border:1.5px solid #89aaa5; border-radius:50%; position:relative; }
+  .brandmark:before,.brandmark:after { content:""; position:absolute; border:1.5px solid #89aaa5; border-radius:50%; inset:7px -5px; transform:rotate(35deg); }
+  .brandmark:after { transform:rotate(-35deg); }
+  h1 { font-family:Georgia,serif; font-size:17px; margin:0; line-height:1.05; letter-spacing:.2px; }
+  .kicker { font-size:9px; text-transform:uppercase; letter-spacing:2.2px; color:#7e8b86; margin-top:4px; }
+  #tray { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; min-width:0; }
+  .element { height:67px; border:1px solid #d8d4c6; border-radius:10px; background:#f7f5ed; cursor:grab; display:flex; flex-direction:column; align-items:center; justify-content:center; user-select:none; touch-action:none; transition:.15s; }
+  .element:hover { transform:translateY(-2px); border-color:#b7c6c1; box-shadow:0 5px 16px #4d66600d; }
+  .element:active { cursor:grabbing; transform:scale(.96); }
+  .element .sym { font-family:Georgia,serif; font-size:24px; line-height:1; }
+  .element .name { font-size:8px; text-transform:uppercase; letter-spacing:1px; color:#86908c; margin-top:6px; }
+  .element[data-el="H"] { --atom:#aebec9; } .element[data-el="C"] { --atom:#5d6968; }
+  .element[data-el="O"] { --atom:#c86d61; } .element[data-el="N"] { --atom:#6d94a6; }
+  .element[data-el="S"] { --atom:#c6ad68; } .element[data-el="CL"] { --atom:#6e9a78; }
+  .asidefoot { margin-top:auto; }
+  .hint { font-size:10px; line-height:1.55; color:#89918d; border-top:1px solid var(--line); padding-top:12px; }
+  main { position:relative; overflow:hidden; min-width:0; }
+  header { height:70px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; border-bottom:1px solid var(--line); background:#f7f5edbb; backdrop-filter:blur(8px); position:absolute; inset:0 0 auto 0; z-index:4; }
+  .titleline { font-family:Georgia,serif; font-size:13px; }
+  .titleline span { color:#9aa39f; font-family:"Trebuchet MS",sans-serif; font-size:10px; margin-left:8px; }
+  #toolbar { display:flex; gap:7px; }
+  .tool { height:34px; border:1px solid #d5d1c3; border-radius:18px; background:#faf8f1; padding:0 12px; font-size:10px; cursor:pointer; display:flex; align-items:center; gap:7px; }
+  .tool:hover { border-color:#9bb1ab; }
+  .tool svg { width:13px; height:13px; }
+  #canvas { position:absolute; inset:70px 0 0; cursor:default; background-image:radial-gradient(#d5d4ca 0.8px, transparent 0.8px); background-size:24px 24px; }
+  #canvas.dragging { cursor:grabbing; }
+  .atom { position:absolute; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-size:19px; color:#fff; border:2px solid #ffffffcc; box-shadow:0 8px 18px #2b484329,inset -7px -7px 13px #00000012,inset 5px 5px 10px #ffffff45; user-select:none; touch-action:none; z-index:2; cursor:grab; }
+  .atom:after { content:""; position:absolute; width:12px; height:8px; border-radius:50%; background:#ffffff66; top:9px; left:13px; transform:rotate(-35deg); }
+  .bond { position:absolute; height:13px; margin-top:-6.5px; border-radius:8px; background:#c7c9bf; box-shadow:0 2px 5px #4b5b5520,inset 0 2px 2px #ffffff90,inset 0 -2px 2px #89928c55; transform-origin:0 50%; z-index:1; }
+  .bond.double:after { content:""; position:absolute; height:3px; left:5px; right:5px; top:-7px; border-radius:3px; background:#d5d6cd; }
+  .ghost { position:absolute; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%; border:1.5px dashed #91aaa4; z-index:3; pointer-events:none; }
+  #status { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); font-size:9px; text-transform:uppercase; letter-spacing:1.8px; color:#96a09c; pointer-events:none; }
+  @media(max-width:700px) { #app{grid-template-columns:1fr; grid-template-rows:1fr 118px;} aside{grid-row:2; border-right:0;border-top:1px solid var(--line);padding:10px 12px 8px;} .brand{display:none;} #tray{display:flex;gap:7px;overflow-x:auto;} .element{min-width:58px;height:64px;} .asidefoot{display:none;} #canvas{inset:58px 0 0;} header{height:58px;padding:0 14px;} main{grid-row:1;} .titleline span{display:none;} .tool span{display:none;} .tool{width:34px;padding:0;justify-content:center;} }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <div class="brand"><div class="brandmark"></div><div><h1>Atom Atelier</h1><div class="kicker">free study</div></div></div>
+    <div id="tray"></div>
+    <div class="asidefoot"><div class="hint">Drag an element into the field.<br>Bring atoms together to bond.</div></div>
+  </aside>
+  <main>
+    <header><div class="titleline">Open field <span>no objective</span></div><div id="toolbar">
+      <button class="tool" id="undo" title="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 7H4v-5M4 7l5-5c5 0 9 4 9 9s-4 9-9 9"/></svg><span>undo</span></button>
+      <button class="tool" id="clear" title="Clear field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></svg><span>clear</span></button>
+    </div></header>
+    <div id="canvas"></div><div id="status">field empty</div>
+  </main>
+</div>
+<script>
+const elements={H:{name:'Hydrogen',color:'#aebec9'},C:{name:'Carbon',color:'#596866'},O:{name:'Oxygen',color:'#c96d61'},N:{name:'Nitrogen',color:'#718fa0'},S:{name:'Sulfur',color:'#c4aa60'},Cl:{name:'Chlorine',color:'#73977a'}};
+const canvas=document.querySelector('#canvas'),tray=document.querySelector('#tray'),statusEl=document.querySelector('#status');
+let atoms=[],bonds=[],history=[],drag=null,ghost=null;
+Object.entries(elements).forEach(([symbol,e])=>{const b=document.createElement('button');b.className='element';b.dataset.el=symbol;b.innerHTML=`<span class="sym">${symbol}</span><span class="name">${e.name}</span>`;b.addEventListener('pointerdown',trayStart);tray.appendChild(b)});
+function save(){history.push(JSON.stringify({atoms:atoms.map(a=>({el:a.el,x:a.x,y:a.y})),bonds:bonds.map(b=>[b.a,b.c,b.type])}));if(history.length>30)history.shift()}
+function trayStart(ev){ev.preventDefault();const el=ev.currentTarget.dataset.el,r=canvas.getBoundingClientRect();const x=ev.clientX,y=ev.clientY;if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom){addAtom(el,x-r.left,y-r.top)}else{ghost=document.createElement('div');ghost.className='ghost';canvas.appendChild(ghost);moveGhost(x-r.left,y-r.top)}drag={kind:'new',el,offsetX:0,offsetY:0,pointerId:ev.pointerId};ev.currentTarget.setPointerCapture(ev.pointerId);document.addEventListener('pointermove',trayMove);document.addEventListener('pointerup',trayEnd,{once:true})}
+function moveGhost(x,y){if(ghost){ghost.style.left=x+'px';ghost.style.top=y+'px'}}
+function trayMove(ev){if(!drag)return;const r=canvas.getBoundingClientRect();moveGhost(ev.clientX-r.left,ev.clientY-r.top);canvas.classList.add('dragging')}
+function trayEnd(ev){document.removeEventListener('pointermove',trayMove);canvas.classList.remove('dragging');const r=canvas.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;if(ghost){ghost.remove();ghost=null;if(x>0&&x<r.width&&y>0&&y<r.height){addAtom(drag.el,x,y)}}drag=null}
+function addAtom(el,x,y){save();const id=atoms.length?Math.max(...atoms.map(a=>a.id))+1:1;const d=document.createElement('div');d.className='atom';d.dataset.id=id;d.textContent=el;d.style.background=elements[el].color;d.style.left=x+'px';d.style.top=y+'px';canvas.appendChild(d);const a={id,el,x,y,elNode:d};atoms.push(a);d.addEventListener('pointerdown',atomStart);updateStatus();return a}
+function atomStart(ev){ev.preventDefault();ev.stopPropagation();const id=+ev.currentTarget.dataset.id,a=atoms.find(v=>v.id===id),r=canvas.getBoundingClientRect();save();drag={kind:'atom',atom:a,offsetX:ev.clientX-r.left-a.x,offsetY:ev.clientY-r.top-a.y,pointerId:ev.pointerId};ev.currentTarget.setPointerCapture(ev.pointerId);canvas.classList.add('dragging');document.addEventListener('pointermove',atomMove);document.addEventListener('pointerup',atomEnd,{once:true})}
+function atomMove(ev){if(!drag||drag.kind!=='atom')return;const r=canvas.getBoundingClientRect();const a=drag.atom;a.x=Math.max(28,Math.min(r.width-28,ev.clientX-r.left-drag.offsetX));a.y=Math.max(28,Math.min(r.height-28,ev.clientY-r.top-drag.offsetY));a.elNode.style.left=a.x+'px';a.elNode.style.top=a.y+'px';renderBonds()}
+function atomEnd(ev){document.removeEventListener('pointermove',atomMove);canvas.classList.remove('dragging');if(!drag)return;const a=drag.atom,r=canvas.getBoundingClientRect();let nearest=null,dist=62;atoms.forEach(b=>{if(b===a)return;let d=Math.hypot(a.x-b.x,a.y-b.y);if(d<dist){dist=d;nearest=b}});if(nearest&&!bondExists(a.id,nearest.id)){bonds.push({a:a.id,c:nearest.id,type:dist<42?'double':'single'})}drag=null;renderBonds();updateStatus()}
+function bondExists(a,c){return bonds.some(b=>(b.a===a&&b.c===c)||(b.a===c&&b.c===a))}
+function renderBonds(){bonds.forEach(b=>{if(!b.node){b.node=document.createElement('div');canvas.appendChild(b.node)}const a=atoms.find(v=>v.id===b.a),c=atoms.find(v=>v.id===b.c);if(!a||!c)return;b.node.className='bond '+(b.type==='double'?'double':'');const dx=c.x-a.x,dy=c.y-a.y,len=Math.hypot(dx,dy)-18,angle=Math.atan2(dy,dx)*180/Math.PI;b.node.style.width=Math.max(0,len)+'px';b.node.style.left=(a.x+dx/Math.hypot(dx,dy)*29)+'px';b.node.style.top=(a.y+dy/Math.hypot(dx,dy)*29)+'px';b.node.style.transform=`rotate(${angle}deg)`})}
+function updateStatus(){const n=atoms.length,m=bonds.length;statusEl.textContent=n===0?'field empty':`${n} atom${n===1?'':'s'} · ${m} bond${m===1?'':'s'}`}
+document.querySelector('#clear').addEventListener('click',()=>{if(!atoms.length)return;save();atoms.forEach(a=>a.elNode.remove());bonds.forEach(b=>b.node?.remove());atoms=[];bonds=[];updateStatus()});
+document.querySelector('#undo').addEventListener('click',()=>{if(!history.length)return;const snap=JSON.parse(history.pop());atoms.forEach(a=>a.elNode.remove());bonds.forEach(b=>b.node?.remove());atoms=[];bonds=[];snap.atoms.forEach(v=>addAtomRaw(v.el,v.x,v.y));snap.bonds.forEach(([a,c,type])=>bonds.push({a,c,type}));renderBonds();updateStatus()});
+function addAtomRaw(el,x,y){const id=atoms.length?Math.max(...atoms.map(a=>a.id))+1:1,d=document.createElement('div');d.className='atom';d.dataset.id=id;d.textContent=el;d.style.background=elements[el].color;d.style.left=x+'px';d.style.top=y+'px';canvas.appendChild(d);const a={id,el,x,y,elNode:d};atoms.push(a);d.addEventListener('pointerdown',atomStart)}
+</script>
+</body>
+</html>
